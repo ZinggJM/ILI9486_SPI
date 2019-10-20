@@ -202,25 +202,64 @@ void ILI9486_SPI::init(void)
   _writeCommandTransaction(0x29);  // Display ON
 }
 
-#if 0 // doesn't work
+#if 1
 void ILI9486_SPI::setWindowAddress(int16_t x1, int16_t y1, int16_t x2, int16_t y2)
 {
   // this controller needs separate transactions; reason _dc before _cs
   // _dc Data/Command needs be set before activating CS
-  uint8_t data[4];
-  _writeCommandTransaction(ILI9486_SPI_CASET);  // Column addr set
-  data[0] = (x1 >> 8);
-  data[1] = (x1 & 0xFF); // XSTART
-  data[2] = (x2 >> 8);
-  data[3] = (x2 & 0xFF); // XEND
-  _writeDataTransaction(data, 4);
-  _writeCommandTransaction(ILI9486_SPI_PASET);  // Row addr set
-  data[0] = (y1 >> 8);
-  data[1] = (y1);        // YSTART
-  data[2] = (y2 >> 8);
-  data[3] = (y2);        // YEND
-  _writeDataTransaction(data, 4);
-  _writeCommandTransaction(ILI9486_SPI_RAMWR);  // write to RAM
+  SPI.beginTransaction(_spi_settings);
+
+  if (_dc >= 0) digitalWrite(_dc, LOW); //this controller needs _dc before _cs
+  if (_cs >= 0) digitalWrite(_cs, LOW);
+  SPI.transfer(ILI9486_SPI_CASET);  // Column addr set
+  if (_cs >= 0) digitalWrite(_cs, HIGH);
+  if (_dc >= 0) digitalWrite(_dc, HIGH);
+
+  if (_cs >= 0) digitalWrite(_cs, LOW);
+  SPI.transfer(x1 >> 8);
+  if (_cs >= 0) digitalWrite(_cs, HIGH);
+
+  if (_cs >= 0) digitalWrite(_cs, LOW);
+  SPI.transfer(x1 & 0xFF); // XSTART
+  if (_cs >= 0) digitalWrite(_cs, HIGH);
+
+  if (_cs >= 0) digitalWrite(_cs, LOW);
+  SPI.transfer(x2 >> 8);
+  if (_cs >= 0) digitalWrite(_cs, HIGH);
+
+  if (_cs >= 0) digitalWrite(_cs, LOW);
+  SPI.transfer(x2 & 0xFF); // XEND
+  if (_cs >= 0) digitalWrite(_cs, HIGH);
+
+  if (_dc >= 0) digitalWrite(_dc, LOW); //this controller needs _dc before _cs
+  if (_cs >= 0) digitalWrite(_cs, LOW);
+  SPI.transfer(ILI9486_SPI_PASET);  // Row addr set
+  if (_cs >= 0) digitalWrite(_cs, HIGH);
+  if (_dc >= 0) digitalWrite(_dc, HIGH);
+
+  if (_cs >= 0) digitalWrite(_cs, LOW);
+  SPI.transfer(y1 >> 8);
+  if (_cs >= 0) digitalWrite(_cs, HIGH);
+
+  if (_cs >= 0) digitalWrite(_cs, LOW);
+  SPI.transfer(y1);        // YSTART
+  if (_cs >= 0) digitalWrite(_cs, HIGH);
+
+  if (_cs >= 0) digitalWrite(_cs, LOW);
+  SPI.transfer(y2 >> 8);
+  if (_cs >= 0) digitalWrite(_cs, HIGH);
+
+  if (_cs >= 0) digitalWrite(_cs, LOW);
+  SPI.transfer(y2);        // YEND
+  if (_cs >= 0) digitalWrite(_cs, HIGH);
+
+  if (_dc >= 0) digitalWrite(_dc, LOW); //this controller needs _dc before _cs
+  if (_cs >= 0) digitalWrite(_cs, LOW);
+  SPI.transfer(ILI9486_SPI_RAMWR);  // write to RAM
+  if (_cs >= 0) digitalWrite(_cs, HIGH);
+  if (_dc >= 0) digitalWrite(_dc, HIGH);
+
+  SPI.endTransaction();
 }
 #else
 void ILI9486_SPI::setWindowAddress(int16_t x1, int16_t y1, int16_t x2, int16_t y2)
@@ -436,11 +475,11 @@ void ILI9486_SPI::_writeData16(const uint16_t* data, uint32_t n)
 void ILI9486_SPI::_writeCommandTransaction(uint8_t cmd)
 {
   SPI.beginTransaction(_spi_settings);
-  digitalWrite(_dc, LOW); //this controller needs _dc before _cs
+  if (_dc >= 0) digitalWrite(_dc, LOW); //this controller needs _dc before _cs
   if (_cs >= 0) digitalWrite(_cs, LOW);
   SPI.transfer(cmd);
   if (_cs >= 0) digitalWrite(_cs, HIGH);
-  digitalWrite(_dc, HIGH);
+  if (_dc >= 0) digitalWrite(_dc, HIGH);
   SPI.endTransaction();
 }
 

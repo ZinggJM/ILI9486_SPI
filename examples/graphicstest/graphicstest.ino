@@ -36,6 +36,8 @@ ILI9486_SPI tft(/*CS=5*/ SS, /*DC=*/ 17, /*RST=*/ 16);
 ILI9486_SPI tft(/*CS=4*/ SS, /*DC=*/ 3, /*RST=*/ 2);
 #elif defined(__AVR)
 ILI9486_SPI tft(/*CS=10*/ SS, /*DC=*/ 8, /*RST=*/ 9);
+#elif defined(ARDUINO_ARCH_SAM)
+ILI9486_SPI tft(/*CS=10*/ SS, /*DC=*/ 6, /*RST=*/ 5); // my proto board
 #else
 // catch all other default
 ILI9486_SPI tft(/*CS=10*/ SS, /*DC=*/ 8, /*RST=*/ 9);
