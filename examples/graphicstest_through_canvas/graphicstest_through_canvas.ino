@@ -79,7 +79,9 @@ void setup()
   Serial.begin(115200);
   Serial.println();
   Serial.println("setup");
-  //Serial.println(String(controller.name) + " Test on " + String(io.name));
+
+  // uncomment for normal SPI mode, used for "special" SPI circuit found e.g. on 3.5" RPI HVGA display
+  //setSpiKludge(false); // rpi_spi16_mode
 
   screen.init();
   screen.fillScreen(BLACK);

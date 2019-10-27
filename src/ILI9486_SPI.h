@@ -1,5 +1,6 @@
 // created by Jean-Marc Zingg to be a standalone ILI9486_SPI library (instead of the GxCTRL_ILI9486_SPI class for the GxTFT library)
 // code extracts taken from https://github.com/Bodmer/TFT_HX8357
+// spi kludge handling solution found in https://github.com/Bodmer/TFT_eSPI
 // code extracts taken from https://github.com/adafruit/Adafruit-GFX-Library
 //
 // License: GNU GENERAL PUBLIC LICENSE V3, see LICENSE
@@ -28,28 +29,26 @@ class ILI9486_SPI : public Adafruit_GFX
     virtual void setRotation(uint8_t r);
     virtual void invertDisplay(bool i);
     // other public methods
+    void setSpiKludge(bool rpi_spi16_mode = true); // call with false before init to disable
     void init(void);
-    void setWindowAddress(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
+    void setWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
     void pushColors(const uint16_t* data, uint16_t n); // fast one
     void setBackLight(bool lit);
     uint16_t color565(uint8_t r, uint8_t g, uint8_t b);
     void drawRGBBitmap(int16_t x, int16_t y, uint16_t *pcolors, int16_t w, int16_t h);
     void drawRGBBitmap(int16_t x, int16_t y, const uint16_t bitmap[], int16_t w, int16_t h);
   private:
+    void _setWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
     void _startTransaction();
     void _endTransaction();
     void _writeCommand(uint8_t cmd);
+    void _writeCommand16(uint16_t cmd);
     void _writeData(uint8_t data);
     void _writeData16(uint16_t data);
     void _writeData16(uint16_t data, uint32_t n);
     void _writeData16(const uint16_t* data, uint32_t n);
-    void _writeCommandTransaction(uint8_t cmd);
-    void _writeDataTransaction(uint8_t data);
-    void _writeDataTransaction16(uint16_t data);
-    void _writeDataTransaction(uint8_t* data, uint32_t n);
-  protected:
-    uint16_t WIDTH, HEIGHT, _width, _height, _rotation;
   private:
+    bool _spi16_mode;
     SPISettings _spi_settings;
     int8_t _cs, _dc, _rst;
     int8_t _bgr;

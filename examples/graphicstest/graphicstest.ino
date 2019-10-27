@@ -21,7 +21,7 @@
 
 #include <ILI9486_SPI.h> //Hardware-specific library
 
-// adapt the constructor parameters to your wiring for the appropriate processor conditional, 
+// adapt the constructor parameters to your wiring for the appropriate processor conditional,
 // or add a new one or adapt the catch all other default
 
 #if (defined(TEENSYDUINO) && (TEENSYDUINO == 147))
@@ -61,8 +61,9 @@ void setup()
   Serial.begin(115200);
   Serial.println();
   Serial.println("setup");
-  //Serial.println(String(controller.name) + " Test on " + String(io.name));
 
+  // uncomment for normal SPI mode, used for "special" SPI circuit found e.g. on 3.5" RPI HVGA display
+  //setSpiKludge(false); // rpi_spi16_mode
   tft.init();
 
   Serial.println("tft.init() done");
@@ -419,7 +420,7 @@ unsigned long testFilledRoundRects() {
 }
 
 #if 0
-void testEllipses() 
+void testEllipses()
 {
   tft.fillScreen(BLACK);
   for (int i = 0; i < 40; i++)
@@ -443,7 +444,7 @@ void testEllipses()
   delay(2000);
 }
 
-void testCurves() 
+void testCurves()
 {
   uint16_t x = tft.width() / 2;
   uint16_t y = tft.height() / 2;

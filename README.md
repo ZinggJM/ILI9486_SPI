@@ -4,6 +4,12 @@ This library supports ILI9486 SPI TFT to use with Adafruit_GFX
 
 The code is extracted from GxTFT and adapted for single controller use and Adafruit_GFX.
 
+Can be used with the "special" SPI circuit found on RPi and Waveshare TFTs.
+
+### Version 1.0.0
+- replaced RPi SPI kludge handling, better performance
+- added method setSpiKludge() 
+- rpi_spi16_mode is on per default, switch off by setSpiKludge(false)
 ### Version 0.0.2
 - added example constructors for Arduino Due to the examples
 - tested with Arduino Due
