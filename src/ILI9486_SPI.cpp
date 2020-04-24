@@ -31,6 +31,20 @@ ILI9486_SPI::ILI9486_SPI(int8_t cs, int8_t dc, int8_t rst) : Adafruit_GFX(320, 4
   _dc = dc;
   _rst = rst;
   _bgr = MADCTL_BGR;
+#if defined(ESP8266)
+  if ((_cs >= 0) && (_dc >= 0))
+  {
+    _cs_pinmask = (uint32_t) digitalPinToBitMask(_cs);
+    _dc_pinmask = (uint32_t) digitalPinToBitMask(_dc);
+  }
+  else
+  {
+    _cs_pinmask = 0;
+    _dc_pinmask = 0;
+  }
+#endif
+  _x_address_set = -1;
+  _x_address_set = -1;
   digitalWrite(_cs, HIGH);
   digitalWrite(_dc, HIGH);
   pinMode(_cs, OUTPUT);
@@ -40,14 +54,88 @@ ILI9486_SPI::ILI9486_SPI(int8_t cs, int8_t dc, int8_t rst) : Adafruit_GFX(320, 4
     digitalWrite(rst, HIGH);
     pinMode(rst, OUTPUT);
   }
-  rotation = 0;
-  WIDTH = 320;
-  HEIGHT = 480;
-  _width = WIDTH;
-  _height = HEIGHT;
 }
 
 // *** (overridden) virtual methods ***
+
+#if defined(ESP8266) && true // This is for the RPi display that needs 16 bits
+
+#define CMD_BITS (16-1)
+
+void ILI9486_SPI::drawPixel(int16_t x, int16_t y, uint16_t color)
+{
+  // Range checking
+  if ((x < 0) || (y < 0) || (x >= _width) || (y >= _height)) return;
+  if (_spi16_mode && _cs_pinmask)
+  {
+    SPI.beginTransaction(_spi_settings);
+    GPOC = _cs_pinmask;
+    SPI1U1 = (CMD_BITS << SPILMOSI) | (CMD_BITS << SPILMISO);
+    // No need to send x if it has not changed (speeds things up)
+    if (_x_address_set != x)
+    {
+      GPOC = _dc_pinmask;
+      SPI1W0 = ILI9486_SPI_CASET << (CMD_BITS + 1 - 8);
+      SPI1CMD |= SPIBUSY;
+      while (SPI1CMD & SPIBUSY) {}
+      GPOS = _dc_pinmask;
+      SPI1W0 = x >> 0;
+      SPI1CMD |= SPIBUSY;
+      while (SPI1CMD & SPIBUSY) {}
+      SPI1W0 = x << 8;
+      SPI1CMD |= SPIBUSY;
+      while (SPI1CMD & SPIBUSY) {}
+      SPI1W0 = x >> 0;
+      SPI1CMD |= SPIBUSY;
+      while (SPI1CMD & SPIBUSY) {}
+      SPI1W0 = x << 8;
+      SPI1CMD |= SPIBUSY;
+      while (SPI1CMD & SPIBUSY) {}
+      _x_address_set = x;
+    }
+    // No need to send y if it has not changed (speeds things up)
+    if (_y_address_set != y)
+    {
+      GPOC = _dc_pinmask;
+      SPI1W0 = ILI9486_SPI_PASET << (CMD_BITS + 1 - 8);
+      SPI1CMD |= SPIBUSY;
+      while (SPI1CMD & SPIBUSY) {}
+      GPOS = _dc_pinmask;
+      SPI1W0 = y >> 0;
+      SPI1CMD |= SPIBUSY;
+      while (SPI1CMD & SPIBUSY) {}
+      SPI1W0 = y << 8;
+      SPI1CMD |= SPIBUSY;
+      while (SPI1CMD & SPIBUSY) {}
+      SPI1W0 = y >> 0;
+      SPI1CMD |= SPIBUSY;
+      while (SPI1CMD & SPIBUSY) {}
+      SPI1W0 = y << 8;
+      SPI1CMD |= SPIBUSY;
+      while (SPI1CMD & SPIBUSY) {}
+      _y_address_set = y;
+    }
+    GPOC = _dc_pinmask;
+    SPI1W0 = ILI9486_SPI_RAMWR << (CMD_BITS + 1 - 8);
+    SPI1CMD |= SPIBUSY;
+    while (SPI1CMD & SPIBUSY) {}
+    GPOS = _dc_pinmask;
+    SPI1W0 = (color >> 8) | (color << 8);
+    SPI1CMD |= SPIBUSY;
+    while (SPI1CMD & SPIBUSY) {}
+    GPOS = _cs_pinmask;
+    SPI.endTransaction();
+  }
+  else
+  {
+    _startTransaction();
+    _setWindow(x, y, 1, 1);
+    _writeData16(color);
+    _endTransaction();
+  }
+}
+
+#else
 
 void ILI9486_SPI::drawPixel(int16_t x, int16_t y, uint16_t color)
 {
@@ -60,6 +148,8 @@ void ILI9486_SPI::drawPixel(int16_t x, int16_t y, uint16_t color)
   _writeData16(color);
   _endTransaction();
 }
+
+#endif
 
 void ILI9486_SPI::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
 {
@@ -156,8 +246,8 @@ void ILI9486_SPI::init(void)
 {
   digitalWrite(_cs, HIGH);
   SPI.begin();
-  //SPI.beginTransaction( { SPI_SPEED, MSBFIRST, SPI_MODE0 } );
-  //SPI.endTransaction();
+  SPI.beginTransaction( { SPI_SPEED, MSBFIRST, SPI_MODE0 } );
+  SPI.endTransaction();
   if (_rst >= 0)
   {
     digitalWrite(_rst, LOW);
@@ -406,10 +496,10 @@ void ILI9486_SPI::_setWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
   if (_spi16_mode)
   {
     _writeCommand16(ILI9486_SPI_CASET);
-    uint16_t columns[] = {x >> 8, x & 0xFF, xe >> 8, xe & 0xFF};
+    uint16_t columns[] = {uint16_t(x >> 8), uint16_t(x & 0xFF), uint16_t(xe >> 8), uint16_t(xe & 0xFF)};
     _writeData16(columns, 4);
     _writeCommand16(ILI9486_SPI_PASET);
-    uint16_t rows[] = {y >> 8, y & 0xFF, ye >> 8, ye & 0xFF};
+    uint16_t rows[] = {uint16_t(y >> 8), uint16_t(y & 0xFF), uint16_t(ye >> 8), uint16_t(ye & 0xFF)};
     _writeData16(rows, 4);
     _writeCommand16(ILI9486_SPI_RAMWR);
   }
@@ -423,6 +513,8 @@ void ILI9486_SPI::_setWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
     _writeData16(ye);
     _writeCommand(ILI9486_SPI_RAMWR);
   }
+  _x_address_set = -1;
+  _x_address_set = -1;
 }
 
 void ILI9486_SPI::_startTransaction()

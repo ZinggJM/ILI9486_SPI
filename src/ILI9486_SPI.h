@@ -52,6 +52,8 @@ class ILI9486_SPI : public Adafruit_GFX
     SPISettings _spi_settings;
     int8_t _cs, _dc, _rst;
     int8_t _bgr;
+    int32_t  _x_address_set, _y_address_set;
+    uint32_t _cs_pinmask, _dc_pinmask;
 };
 
 #endif
