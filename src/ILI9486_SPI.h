@@ -47,6 +47,9 @@ class ILI9486_SPI : public Adafruit_GFX
     void _writeData16(uint16_t data);
     void _writeData16(uint16_t data, uint32_t n);
     void _writeData16(const uint16_t* data, uint32_t n);
+    // note: only use for pixel data, RGB888 on ILI9488, ILI9486 native SPI
+    void _writeColor16(uint16_t data, uint32_t n);
+    void _writeColor16(const uint16_t* data, uint32_t n);
   private:
     bool _spi16_mode;
     SPISettings _spi_settings;

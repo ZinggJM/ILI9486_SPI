@@ -5,8 +5,11 @@ This library supports ILI9486 SPI TFT to use with Adafruit_GFX
 The code is extracted from GxTFT and adapted for single controller use and Adafruit_GFX.
 
 Can be used with the "special" SPI circuit found on RPi and Waveshare TFTs.
+Can also be used with the native SPI connection of the controller, as used on other TFTs.
 
-### Version 1.0.1
+### Version 1.0.2
+- added 18-bit color handling for native SPI use
+#### Version 1.0.1
 - fixed an error and some warnings
 - added some optimizations that were not checked-in yet
 - re-tested with ESP8266 Wemos D1 R2 and Arduino Due

@@ -130,7 +130,7 @@ void ILI9486_SPI::drawPixel(int16_t x, int16_t y, uint16_t color)
   {
     _startTransaction();
     _setWindow(x, y, 1, 1);
-    _writeData16(color);
+    _writeColor16(color, 1);
     _endTransaction();
   }
 }
@@ -145,7 +145,7 @@ void ILI9486_SPI::drawPixel(int16_t x, int16_t y, uint16_t color)
   }
   _startTransaction();
   _setWindow(x, y, 1, 1);
-  _writeData16(color);
+  _writeColor16(color, 1);
   _endTransaction();
 }
 
@@ -165,7 +165,7 @@ void ILI9486_SPI::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t 
   if ((w < 1) || (h < 1)) return;
   _startTransaction();
   _setWindow(x, y, w, h);
-  _writeData16(color, uint32_t(w) * uint32_t(h));
+  _writeColor16(color, uint32_t(w) * uint32_t(h));
   _endTransaction();
 }
 
@@ -320,7 +320,7 @@ void ILI9486_SPI::init(void)
   else
   {
     _writeCommand(0x3A);
-    _writeData(0x55);  // use 16 bits per pixel color
+    _writeData(0x66);  // 18 bit colour for native SPI
     _writeCommand(0x36);
     _writeData(0x48);  // MX, BGR == rotation 0
     // PGAMCTRL(Positive Gamma Control)
@@ -391,7 +391,7 @@ void ILI9486_SPI::setWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
 void ILI9486_SPI::pushColors(const uint16_t* data, uint16_t n)
 {
   _startTransaction();
-  _writeData16(data, n);
+  _writeColor16(data, n);
   _endTransaction();
 }
 
@@ -440,7 +440,7 @@ void ILI9486_SPI::drawRGBBitmap(int16_t x, int16_t y, uint16_t *pcolors, int16_t
   _setWindow(x, y, w, h); // Clipped area
   while (h--) // For each (clipped) scanline...
   {
-    _writeData16(pcolors, w); // Push one (clipped) row
+    _writeColor16(pcolors, w); // Push one (clipped) row
     pcolors += saveW; // Advance pointer by one full (unclipped) line
   }
   _endTransaction();
@@ -480,7 +480,7 @@ void ILI9486_SPI::drawRGBBitmap(int16_t x, int16_t y, const uint16_t bitmap[], i
   {
     for (int16_t i = 0; i < w; i++) // Push one (clipped) row
     {
-      _writeData16(pgm_read_word(pcolors + i));
+      _writeColor16(pgm_read_word(pcolors + i), 1);
     }
     pcolors += saveW; // Advance pointer by one full (unclipped) line
   }
@@ -616,6 +616,68 @@ void ILI9486_SPI::_writeData16(const uint16_t* data, uint32_t n)
     SPI.transfer(color >> 8);
     SPI.transfer(color);
 #endif
+  }
+#endif
+}
+
+void ILI9486_SPI::_writeColor16(uint16_t data, uint32_t n)
+{
+  if (_spi16_mode) return _writeData16(data, n);
+#if (defined (ESP8266) || defined(ESP32))
+  uint8_t rgb888[] = {uint8_t((data & 0xF800) >> 8), uint8_t((data & 0x07E0) >> 3), uint8_t((data & 0x001F) << 3)};
+  SPI.writePattern(rgb888, 3, n);
+#else // wdt on ESP8266
+  while (n-- > 0)
+  {
+    SPI.transfer(uint8_t((data & 0xF800) >> 8));
+    SPI.transfer(uint8_t((data & 0x07E0) >> 3));
+    SPI.transfer(uint8_t((data & 0x001F) << 3));
+  }
+#endif
+}
+
+#if (defined (ESP8266) || defined(ESP32))
+#define SPI_WRITE_BYTES(data, n) SPI.transferBytes(data, 0, n)
+#elif defined(ARDUINO_ARCH_SAM)
+#define SPI_WRITE_BYTES(data, n) SPI.transfer(SS, data, n)
+#elif (TEENSYDUINO == 147)
+#define SPI_WRITE_BYTES(data, n) SPI.transfer(data, 0, n)
+#elif defined(ARDUINO_ARCH_STM32F1) || defined(ARDUINO_ARCH_STM32F4)
+#define SPI_WRITE_BYTES(data, n) SPI.write(data, n)
+#else
+// valid for all other platforms? else comment out next line
+#define SPI_WRITE_BYTES(data, n) SPI.transfer(data, n)
+#endif
+
+
+void ILI9486_SPI::_writeColor16(const uint16_t* data, uint32_t n)
+{
+  if (_spi16_mode) return _writeData16(data, n);
+#if defined(SPI_WRITE_BYTES)
+  static const uint16_t rgb888_buffer_size = 60; // 64 optimal for ESP8266 SPI
+  static const uint32_t max_chunk = rgb888_buffer_size / 3; // rgb888
+  uint8_t rgb888_buffer[rgb888_buffer_size];
+  while (n > 0)
+  {
+    uint32_t chunk = min(max_chunk, n);
+    n -= chunk;
+    uint8_t* p = rgb888_buffer;
+    uint16_t ncopy = chunk;
+    while (ncopy-- > 0)
+    {
+      *p++ = uint8_t((*data & 0xF800) >> 8);
+      *p++ = uint8_t((*data & 0x07E0) >> 3);
+      *p++ = uint8_t((*data & 0x001F) << 3);
+      data++;
+    }
+    SPI_WRITE_BYTES(rgb888_buffer, 3 * chunk);
+  }
+#else
+  while (n-- > 0)
+  {
+    SPI.transfer(uint8_t((*data & 0xF800) >> 8));
+    SPI.transfer(uint8_t((*data & 0x07E0) >> 3));
+    SPI.transfer(uint8_t((*data & 0x001F) << 3));
   }
 #endif
 }
