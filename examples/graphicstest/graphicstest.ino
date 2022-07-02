@@ -174,6 +174,20 @@ unsigned long testFillScreen() {
   //if (controller.ID == 0x8875) delay(200); // too fast to be seen
   tft.fillScreen(BLACK);
   yield();
+  tft.setRotation(1);
+  //if (controller.ID == 0x8875) delay(200); // too fast to be seen
+  tft.fillScreen(RED);
+  yield();
+  //if (controller.ID == 0x8875) delay(200); // too fast to be seen
+  tft.fillScreen(GREEN);
+  yield();
+  //if (controller.ID == 0x8875) delay(200); // too fast to be seen
+  tft.fillScreen(BLUE);
+  yield();
+  //if (controller.ID == 0x8875) delay(200); // too fast to be seen
+  tft.fillScreen(BLACK);
+  yield();
+  tft.setRotation(0);
   return micros() - start;
 }
 

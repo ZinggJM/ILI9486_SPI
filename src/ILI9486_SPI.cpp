@@ -181,7 +181,7 @@ void ILI9486_SPI::drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color)
 
 void ILI9486_SPI::fillScreen(uint16_t color)
 {
-  fillRect(0, 0, WIDTH, HEIGHT, color);
+  fillRect(0, 0, _width, _height, color);
 }
 
 void ILI9486_SPI::setRotation(uint8_t r)

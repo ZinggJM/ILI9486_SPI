@@ -7,7 +7,9 @@ The code is extracted from GxTFT and adapted for single controller use and Adafr
 Can be used with the "special" SPI circuit found on RPi and Waveshare TFTs.
 Can also be used with the native SPI connection of the controller, as used on other TFTs.
 
-### Version 1.0.4
+### Version 1.0.5
+- fixed fillScreen() for Landscape orientation
+#### Version 1.0.4
 - added example Hello_U8g2_Fonts
 #### Version 1.0.3
 - added example HelloWorld
