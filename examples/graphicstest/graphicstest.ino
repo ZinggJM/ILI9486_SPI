@@ -2,7 +2,7 @@
    This sketch uses the GLCD font only.
 
    The performance for each test is reported to the serial
-   port at 38400 baud.
+   port at 115200 baud.
 
    This test occupies the whole of the display therefore
    will take twice as long as it would on a 320 x 240
